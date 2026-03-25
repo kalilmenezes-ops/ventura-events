@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ventura Events</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sand: #F2EBD9;
+    --sand-dark: #E8DCC8;
+    --ink: #1C1A16;
+    --ink-muted: #6B6455;
+    --ocean: #2A6E8C;
+    --ocean-light: #D4E9F0;
+    --sun: #E8943A;
+    --sun-light: #FDF3E7;
+    --sage: #5A7A5E;
+    --sage-light: #E8F0E8;
+    --coral: #C9503A;
+    --coral-light: #FAE8E5;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--sand);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 48px 40px 32px;
+    border-bottom: 1.5px solid var(--ink);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .header-left h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(36px, 6vw, 64px);
+    font-weight: 700;
+    line-height: 0.95;
+    letter-spacing: -1px;
+  }
+
+  .header-left h1 em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--ocean);
+  }
+
+  .header-left p {
+    margin-top: 10px;
+    font-size: 14px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  .header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+  }
+
+  #month-label {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ink-muted);
+  }
+
+  .nav-btns {
+    display: flex;
+    gap: 8px;
+  }
+
+  .nav-btns button {
+    background: none;
+    border: 1.5px solid var(--ink);
+    border-radius: 50%;
+    width: 36px; height: 36px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.15s, color 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .nav-btns button:hover {
+    background: var(--ink);
+    color: var(--sand);
+  }
+
+  /* ── FILTERS ── */
+  .filters {
+    padding: 18px 40px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--sand-dark);
+  }
+
+  .filter-btn {
+    padding: 6px 16px;
+    border-radius: 99px;
+    border: 1.5px solid var(--ink);
+    background: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.02em;
+  }
+
+  .filter-btn:hover { background: var(--sand-dark); }
+  .filter-btn.active { background: var(--ink); color: var(--sand); }
+
+  .filter-btn[data-cat="music"].active      { background: var(--ocean);  border-color: var(--ocean); }
+  .filter-btn[data-cat="outdoors"].active   { background: var(--sage);   border-color: var(--sage); }
+  .filter-btn[data-cat="food"].active       { background: var(--sun);    border-color: var(--sun); }
+  .filter-btn[data-cat="arts"].active       { background: var(--coral);  border-color: var(--coral); }
+  .filter-btn[data-cat="community"].active  { background: #7A5C8A;       border-color: #7A5C8A; }
+
+  /* ── MAIN LAYOUT ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: calc(100vh - 200px);
+  }
+
+  /* ── CALENDAR SIDEBAR ── */
+  .sidebar {
+    border-right: 1.5px solid var(--ink);
+    padding: 28px 24px;
+  }
+
+  .mini-cal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .mini-cal-header span {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+  }
+
+  .mini-cal-header button {
+    background: none; border: none; cursor: pointer;
+    font-size: 14px; color: var(--ink-muted);
+    padding: 2px 6px;
+  }
+
+  .mini-cal-header button:hover { color: var(--ink); }
+
+  .mini-grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .mini-grid th {
+    text-align: center;
+    padding: 4px 0 8px;
+    color: var(--ink-muted);
+    font-weight: 400;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .mini-grid td {
+    text-align: center;
+    padding: 5px 2px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.1s;
+    position: relative;
+  }
+
+  .mini-grid td:hover { background: var(--sand-dark); }
+  .mini-grid td.today { font-weight: 500; }
+
+  .mini-grid td.today span {
+    background: var(--ink);
+    color: var(--sand);
+    border-radius: 50%;
+    width: 26px; height: 26px;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+  }
+
+  .mini-grid td.has-event::after {
+    content: '';
+    display: block;
+    width: 4px; height: 4px;
+    background: var(--ocean);
+    border-radius: 50%;
+    margin: 2px auto 0;
+  }
+
+  .mini-grid td.selected {
+    background: var(--ocean-light);
+  }
+
+  .mini-grid td.other-month { color: #ccc; }
+
+  .sidebar-tip {
+    margin-top: 28px;
+    padding: 16px;
+    background: var(--sun-light);
+    border-left: 3px solid var(--sun);
+    border-radius: 0 8px 8px 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ink-muted);
+  }
+
+  .sidebar-tip strong { color: var(--ink); font-weight: 500; }
+
+  /* ── EVENT LIST ── */
+  .event-list-area {
+    padding: 28px 36px;
+  }
+
+  .date-group { margin-bottom: 36px; }
+
+  .date-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--sand-dark);
+  }
+
+  .date-heading .day-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 42px;
+    line-height: 1;
+    font-weight: 700;
+    color: var(--ink);
+    min-width: 52px;
+  }
+
+  .date-heading .day-info { display: flex; flex-direction: column; }
+  .date-heading .day-name { font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; }
+  .date-heading .month-yr { font-size: 13px; color: var(--ink-muted); }
+
+  .events-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* ── EVENT CARD ── */
+  .event-card {
+    display: flex;
+    gap: 16px;
+    padding: 16px 18px;
+    background: white;
+    border-radius: 12px;
+    border: 1px solid var(--sand-dark);
+    transition: transform 0.15s, box-shadow 0.15s;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .event-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(28,26,22,0.1);
+  }
+
+  .event-time-col {
+    min-width: 68px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-top: 2px;
+  }
+
+  .event-time {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  .event-duration {
+    font-size: 11px;
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+
+  .cat-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-top: 8px;
+  }
+
+  .event-body { flex: 1; }
+
+  .event-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.25;
+    margin-bottom: 4px;
+  }
+
+  .event-venue {
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-bottom: 6px;
+  }
+
+  .event-desc {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #4a4438;
+  }
+
+  .event-tags {
+    margin-top: 8px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .tag-music     { background: var(--ocean-light);  color: var(--ocean); }
+  .tag-outdoors  { background: var(--sage-light);   color: var(--sage); }
+  .tag-food      { background: var(--sun-light);    color: #A0600E; }
+  .tag-arts      { background: var(--coral-light);  color: var(--coral); }
+  .tag-community { background: #F0EBF8;             color: #7A5C8A; }
+  .tag-free      { background: #EDF8ED;             color: #2E7D32; }
+
+  .cat-dot.music     { background: var(--ocean); }
+  .cat-dot.outdoors  { background: var(--sage); }
+  .cat-dot.food      { background: var(--sun); }
+  .cat-dot.arts      { background: var(--coral); }
+  .cat-dot.community { background: #7A5C8A; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 64px 24px;
+    color: var(--ink-muted);
+  }
+
+  .empty-state .wave { font-size: 48px; margin-bottom: 16px; }
+  .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 8px; color: var(--ink); }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  /* ── FOOTER ── */
+  footer {
+    padding: 24px 40px;
+    border-top: 1.5px solid var(--ink);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--ink-muted);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  footer a { color: var(--ocean); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 680px) {
+    header { padding: 28px 20px 20px; }
+    .filters { padding: 14px 20px; }
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { border-right: none; border-bottom: 1.5px solid var(--ink); padding: 20px; }
+    .event-list-area { padding: 20px; }
+    footer { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>Ventura<br><em>Events</em></h1>
+    <p>805 · things to do · always free</p>
+  </div>
+  <div class="header-right">
+    <span id="month-label"></span>
+    <div class="nav-btns">
+      <button id="prev-month" title="Previous month">‹</button>
+      <button id="next-month" title="Next month">›</button>
+    </div>
+  </div>
+</header>
+
+<div class="filters">
+  <button class="filter-btn active" data-cat="all">All events</button>
+  <button class="filter-btn" data-cat="music">Music</button>
+  <button class="filter-btn" data-cat="outdoors">Outdoors</button>
+  <button class="filter-btn" data-cat="food">Food & Drink</button>
+  <button class="filter-btn" data-cat="arts">Arts</button>
+  <button class="filter-btn" data-cat="community">Community</button>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="mini-cal-header">
+      <span id="mini-month-label"></span>
+    </div>
+    <table class="mini-grid">
+      <thead>
+        <tr>
+          <th>Su</th><th>Mo</th><th>Tu</th>
+          <th>We</th><th>Th</th><th>Fr</th><th>Sa</th>
+        </tr>
+      </thead>
+      <tbody id="mini-cal-body"></tbody>
+    </table>
+
+    <div class="sidebar-tip">
+      <strong>Adding your own events</strong><br>
+      Scroll down to see the <code>events</code> array in the page source. Copy any event block and change the details — date, name, venue, description. Save and refresh!
+    </div>
+  </aside>
+
+  <main class="event-list-area" id="event-list">
+    <!-- Rendered by JS -->
+  </main>
+</div>
+
+<footer>
+  <span>Ventura Events · made with ♥ for the 805</span>
+  <span>
+    Data: <a href="https://www.cityofventura.ca.gov/calendar" target="_blank">City of Ventura</a> ·
+    <a href="https://www.visitventuraca.com" target="_blank">Visit Ventura</a>
+  </span>
+</footer>
+
+<script>
+// ============================================================
+//  EVENTS DATA
+//  To add an event, copy one object and change the fields.
+//  date format: "YYYY-MM-DD"
+//  categories: music | outdoors | food | arts | community
+// ============================================================
+const events = [
+  {
+    date: "2026-03-28",
+    time: "10:00 AM",
+    duration: "2 hrs",
+    name: "Ventura Certified Farmers Market",
+    venue: "Santa Clara St & Palm St",
+    description: "Local farmers, fresh produce, flowers, and homemade goods every Saturday morning. A community staple since 1978.",
+    categories: ["food", "community"],
+    free: true,
+    url: "https://www.venturafarmersmarket.org"
+  },
+  {
+    date: "2026-03-28",
+    time: "7:00 PM",
+    duration: "2 hrs",
+    name: "Live Jazz at the Harbor",
+    venue: "Ventura Harbor Village",
+    description: "The Coastal Jazz Quartet plays original compositions and classic standards overlooking the harbor. Bring a blanket.",
+    categories: ["music"],
+    free: false,
+    url: ""
+  },
+  {
+    date: "2026-03-29",
+    time: "9:00 AM",
+    duration: "3 hrs",
+    name: "Channel Islands Kayak Tour",
+    venue: "Kayak Ventura, Harbor Blvd",
+    description: "Guided kayak tour through the sea caves along the Ventura coastline. All skill levels welcome. Equipment provided.",
+    categories: ["outdoors"],
+    free: false,
+    url: ""
+  },
+  {
+    date: "2026-03-29",
+    time: "2:00 PM",
+    duration: "All day",
+    name: "Art Walk: Main Street Gallery Hop",
+    venue: "Downtown Ventura, Main St",
+    description: "Self-guided tour of 14 participating galleries and studios along Main Street. Artists present in their studios.",
+    categories: ["arts", "community"],
+    free: true,
+    url: ""
+  },
+  {
+    date: "2026-04-04",
+    time: "11:00 AM",
+    duration: "1 hr",
+    name: "Sunrise Surf Lesson",
+    venue: "San Buenaventura State Beach",
+    description: "Beginner-friendly group surf lesson with local instructors. Board and wetsuit rental included. Pre-registration required.",
+    categories: ["outdoors"],
+    free: false,
+    url: ""
+  },
+  {
+    date: "2026-04-04",
+    time: "5:00 PM",
+    duration: "3 hrs",
+    name: "Taco & Tequila Festival",
+    venue: "Ventura Pier Parking Lot",
+    description: "30+ local restaurants serving tacos, plus craft agave spirits from Oaxacan and Jalisco producers. Live mariachi.",
+    categories: ["food"],
+    free: false,
+    url: ""
+  },
+  {
+    date: "2026-04-05",
+    time: "7:30 PM",
+    duration: "2 hrs",
+    name: "Poinsettia Pavilion Concert Series",
+    venue: "Poinsettia Pavilion, Telegraph Rd",
+    description: "Ventura's beloved community concert series returns. This month: the sounds of Motown with the Westside Soul Band.",
+    categories: ["music", "community"],
+    free: true,
+    url: ""
+  },
+  {
+    date: "2026-04-11",
+    time: "8:00 AM",
+    duration: "4 hrs",
+    name: "Channel Islands Birding Walk",
+    venue: "Ventura Harbor Visitor Center",
+    description: "Guided shorebird and seabird walk with the Ventura Audubon Society. Binoculars available to borrow. All ages.",
+    categories: ["outdoors", "community"],
+    free: true,
+    url: ""
+  },
+  {
+    date: "2026-04-12",
+    time: "12:00 PM",
+    duration: "All afternoon",
+    name: "Ventura Brewfest",
+    venue: "Marina Park",
+    description: "Over 40 craft breweries from Ventura County and beyond. Local food trucks, live music on two stages, cornhole.",
+    categories: ["food", "music"],
+    free: false,
+    url: ""
+  },
+  {
+    date: "2026-04-18",
+    time: "6:00 PM",
+    duration: "2 hrs",
+    name: "Plein Air Painting — The Pier",
+    venue: "Ventura Pier",
+    description: "Bring your paints and easel for a casual outdoor painting session at golden hour. All mediums welcome. Hosted by VAM.",
+    categories: ["arts"],
+    free: true,
+    url: ""
+  },
+  {
+    date: "2026-04-19",
+    time: "10:00 AM",
+    duration: "2 hrs",
+    name: "Beach Cleanup — Earth Month",
+    venue: "Emma Wood State Beach",
+    description: "Community cleanup for Earth Month with Surfrider Foundation Ventura. Gloves and bags provided. Coffee and donuts after.",
+    categories: ["outdoors", "community"],
+    free: true,
+    url: ""
+  },
+  {
+    date: "2026-04-25",
+    time: "7:00 PM",
+    duration: "3 hrs",
+    name: "Ventura Music Hall: Indie Night",
+    venue: "Ventura Music Hall, Santa Clara St",
+    description: "Three up-and-coming indie rock acts from the LA and SB scene. 21+ after 9pm. Standing room, full bar.",
+    categories: ["music"],
+    free: false,
+    url: ""
+  },
+];
+
+// ============================================================
+//  APP LOGIC — you don't need to edit below this line
+// ============================================================
+
+const MONTHS = ["January","February","March","April","May","June",
+                "July","August","September","October","November","December"];
+const DAYS   = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+let currentDate = new Date();
+let viewYear    = currentDate.getFullYear();
+let viewMonth   = currentDate.getMonth();
+let activeFilter = "all";
+
+function getEventDatesForMonth(yr, mo) {
+  return new Set(
+    events
+      .filter(e => {
+        const d = new Date(e.date + "T12:00:00");
+        return d.getFullYear() === yr && d.getMonth() === mo;
+      })
+      .map(e => new Date(e.date + "T12:00:00").getDate())
+  );
+}
+
+function renderMiniCal() {
+  document.getElementById("mini-month-label").textContent =
+    MONTHS[viewMonth] + " " + viewYear;
+
+  const eventDates = getEventDatesForMonth(viewYear, viewMonth);
+  const first = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const today = new Date();
+
+  let html = "";
+  let day = 1;
+  let started = false;
+
+  for (let row = 0; row < 6; row++) {
+    html += "<tr>";
+    for (let col = 0; col < 7; col++) {
+      if (!started && col < first) {
+        html += "<td class='other-month'></td>";
+      } else if (day > daysInMonth) {
+        html += "<td></td>";
+      } else {
+        started = true;
+        const isToday = (today.getFullYear() === viewYear &&
+                         today.getMonth() === viewMonth &&
+                         today.getDate() === day);
+        const hasEvent = eventDates.has(day);
+        const cls = [
+          isToday ? "today" : "",
+          hasEvent ? "has-event" : ""
+        ].filter(Boolean).join(" ");
+
+        const d = day;
+        html += `<td class="${cls}" onclick="jumpToDate(${viewYear},${viewMonth},${d})">`;
+        html += isToday ? `<span>${day}</span>` : day;
+        html += `</td>`;
+        day++;
+      }
+    }
+    html += "</tr>";
+    if (day > daysInMonth) break;
+  }
+  document.getElementById("mini-cal-body").innerHTML = html;
+}
+
+function jumpToDate(yr, mo, day) {
+  viewYear = yr; viewMonth = mo;
+  renderMiniCal();
+  renderEvents();
+  // Scroll to that date group
+  const id = `date-${yr}-${String(mo+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderEvents() {
+  document.getElementById("month-label").textContent =
+    MONTHS[viewMonth] + " " + viewYear;
+
+  // Filter events for this month + active category
+  const filtered = events.filter(e => {
+    const d = new Date(e.date + "T12:00:00");
+    const matchMonth = d.getFullYear() === viewYear && d.getMonth() === viewMonth;
+    const matchCat   = activeFilter === "all" || e.categories.includes(activeFilter);
+    return matchMonth && matchCat;
+  });
+
+  if (filtered.length === 0) {
+    document.getElementById("event-list").innerHTML = `
+      <div class="empty-state">
+        <div class="wave">🌊</div>
+        <h3>No events this month</h3>
+        <p>Try changing the filter or flipping to another month.<br>Or add your own event to the list!</p>
+      </div>`;
+    return;
+  }
+
+  // Group by date
+  const groups = {};
+  filtered.forEach(e => {
+    if (!groups[e.date]) groups[e.date] = [];
+    groups[e.date].push(e);
+  });
+
+  const sortedDates = Object.keys(groups).sort();
+
+  const html = sortedDates.map(dateStr => {
+    const d = new Date(dateStr + "T12:00:00");
+    const dayNum  = d.getDate();
+    const dayName = DAYS[d.getDay()];
+    const monthName = MONTHS[d.getMonth()];
+
+    const cards = groups[dateStr].map(e => {
+      const catTags = e.categories.map(c =>
+        `<span class="tag tag-${c}">${c}</span>`).join("");
+      const freeBadge = e.free ? `<span class="tag tag-free">Free</span>` : "";
+      const primaryCat = e.categories[0];
+
+      return `
+        <a class="event-card" ${e.url ? `href="${e.url}" target="_blank"` : "href='#'"}>
+          <div class="event-time-col">
+            <span class="event-time">${e.time}</span>
+            <span class="event-duration">${e.duration}</span>
+            <div class="cat-dot ${primaryCat}"></div>
+          </div>
+          <div class="event-body">
+            <div class="event-name">${e.name}</div>
+            <div class="event-venue">📍 ${e.venue}</div>
+            <div class="event-desc">${e.description}</div>
+            <div class="event-tags">${catTags}${freeBadge}</div>
+          </div>
+        </a>`;
+    }).join("");
+
+    return `
+      <div class="date-group" id="date-${dateStr}">
+        <div class="date-heading">
+          <span class="day-num">${dayNum}</span>
+          <div class="day-info">
+            <span class="day-name">${dayName}</span>
+            <span class="month-yr">${monthName} ${viewYear}</span>
+          </div>
+        </div>
+        <div class="events-row">${cards}</div>
+      </div>`;
+  }).join("");
+
+  document.getElementById("event-list").innerHTML = html;
+}
+
+// Filter buttons
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    activeFilter = btn.dataset.cat;
+    renderEvents();
+  });
+});
+
+// Month nav
+document.getElementById("prev-month").addEventListener("click", () => {
+  viewMonth--;
+  if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+  renderMiniCal(); renderEvents();
+});
+document.getElementById("next-month").addEventListener("click", () => {
+  viewMonth++;
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  renderMiniCal(); renderEvents();
+});
+
+// Init — start on the first month that has events
+const firstEvent = events.sort((a,b) => a.date.localeCompare(b.date))[0];
+if (firstEvent) {
+  const d = new Date(firstEvent.date + "T12:00:00");
+  viewYear  = d.getFullYear();
+  viewMonth = d.getMonth();
+}
+
+renderMiniCal();
+renderEvents();
+</script>
+</body>
+</html>
