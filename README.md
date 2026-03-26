@@ -410,10 +410,8 @@
 // ============================================================
 //  GOOGLE CALENDAR CONFIG
 // ============================================================
-const CALENDAR_ID = "38bebb1f740039248dbd383da4fad1cf350923ab82731b30b5cb769bea779503@group.calendar.google.com";
-const PROXY = "https://corsproxy.io/?url=" + encodeURIComponent(
-  "https://calendar.google.com/calendar/ical/" + CALENDAR_ID + "/public/basic.ics"
-);
+const ICAL_URL = "https://calendar.google.com/calendar/ical/38bebb1f74003924bdbd383da4fad1cf350923ab82731b30b5cb769bea779503%40group.calendar.google.com/private-a5a5c0920a1943088eee2e68fa0c2952/basic.ics";
+const PROXY = "https://corsproxy.io/?url=" + encodeURIComponent(ICAL_URL);
 
 // ============================================================
 //  AUTO-TAGGING RULES
