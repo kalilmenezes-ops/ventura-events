@@ -32,18 +32,18 @@
   }
 
   header {
-    padding: 48px 40px 32px;
+    padding: 24px 40px 20px;
     border-bottom: 1.5px solid var(--ink);
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 24px;
+    gap: 16px;
     flex-wrap: wrap;
   }
 
   .header-left h1 {
     font-family: 'Playfair Display', serif;
-    font-size: clamp(36px, 6vw, 64px);
+    font-size: clamp(28px, 4vw, 44px);
     font-weight: 700;
     line-height: 0.95;
     letter-spacing: -1px;
@@ -93,7 +93,7 @@
   .nav-btns button:hover { background: var(--ink); color: var(--sand); }
 
   .filters {
-    padding: 18px 40px;
+    padding: 10px 40px;
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
@@ -123,49 +123,57 @@
 
   .layout {
     display: grid;
-    grid-template-columns: 280px 1fr;
-    min-height: calc(100vh - 200px);
+    grid-template-columns: 240px 1fr;
+    height: calc(100vh - 138px);
+    overflow: hidden;
   }
 
   .sidebar {
     border-right: 1.5px solid var(--ink);
-    padding: 28px 24px;
+    padding: 18px 16px;
+    position: sticky;
+    top: 0;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
   .mini-cal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
   }
 
   .mini-cal-header span {
     font-family: 'Playfair Display', serif;
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .mini-grid {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .mini-grid th {
     text-align: center;
-    padding: 4px 0 8px;
+    padding: 2px 0 6px;
     color: var(--ink-muted);
     font-weight: 400;
-    font-size: 11px;
+    font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
 
   .mini-grid td {
     text-align: center;
-    padding: 5px 2px;
+    padding: 3px 1px;
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 5px;
     transition: background 0.1s;
+    line-height: 1.4;
   }
 
   .mini-grid td:hover { background: var(--sand-dark); }
@@ -174,7 +182,7 @@
     background: var(--ink);
     color: var(--sand);
     border-radius: 50%;
-    width: 26px; height: 26px;
+    width: 22px; height: 22px;
     display: inline-flex;
     align-items: center; justify-content: center;
   }
@@ -182,28 +190,32 @@
   .mini-grid td.has-event::after {
     content: '';
     display: block;
-    width: 4px; height: 4px;
+    width: 3px; height: 3px;
     background: var(--ocean);
     border-radius: 50%;
-    margin: 2px auto 0;
+    margin: 1px auto 0;
   }
 
   .mini-grid td.other-month { color: #ccc; }
 
   .sidebar-tip {
-    margin-top: 28px;
-    padding: 16px;
+    margin-top: 14px;
+    padding: 12px;
     background: var(--sun-light);
     border-left: 3px solid var(--sun);
     border-radius: 0 8px 8px 0;
-    font-size: 13px;
-    line-height: 1.6;
+    font-size: 12px;
+    line-height: 1.5;
     color: var(--ink-muted);
   }
 
   .sidebar-tip strong { color: var(--ink); font-weight: 500; }
 
-  .event-list-area { padding: 28px 36px; }
+  .event-list-area {
+    padding: 24px 32px;
+    overflow-y: auto;
+    height: 100%;
+  }
 
   .loading {
     text-align: center;
@@ -438,8 +450,90 @@ function autoTag(name, description) {
 }
 
 // ============================================================
-//  ICS PARSER
+//  ICS PARSER — handles single events + recurring (RRULE)
 // ============================================================
+
+// Parse a DTSTART/DTEND string into a JS Date
+function parseDT(dt) {
+  if (!dt) return null;
+  const y = +dt.slice(0,4), mo = +dt.slice(4,6)-1, d = +dt.slice(6,8);
+  if (dt.includes("T")) {
+    const h = +dt.slice(9,11), mi = +dt.slice(11,13), s = +dt.slice(13,15)||0;
+    return new Date(y, mo, d, h, mi, s);
+  }
+  return new Date(y, mo, d);
+}
+
+// Format a JS Date back to "YYYY-MM-DD"
+function toDateStr(date) {
+  return date.getFullYear() + "-" +
+    String(date.getMonth()+1).padStart(2,"0") + "-" +
+    String(date.getDate()).padStart(2,"0");
+}
+
+// Format a JS Date to "H:MM AM/PM"
+function toTimeStr(date, hasTime) {
+  if (!hasTime) return "All day";
+  const h = date.getHours(), m = date.getMinutes();
+  return (h > 12 ? h-12 : h||12) + ":" + String(m).padStart(2,"0") + (h >= 12 ? " PM" : " AM");
+}
+
+// Duration string from two Dates
+function toDuration(start, end) {
+  if (!start || !end) return "";
+  const diff = Math.round((end - start) / 60000);
+  if (diff <= 0) return "";
+  const hrs = Math.floor(diff / 60), mins = diff % 60;
+  return hrs > 0 ? hrs + (mins > 0 ? "h " + mins + "m" : " hr") : mins + "m";
+}
+
+// Expand an RRULE into an array of occurrence dates within a window
+function expandRRule(rrule, dtstart, windowMonths = 6) {
+  const params = {};
+  rrule.split(";").forEach(p => {
+    const [k,v] = p.split("=");
+    params[k] = v;
+  });
+
+  const freq   = params.FREQ;
+  const count  = params.COUNT  ? parseInt(params.COUNT)  : 999;
+  const until  = params.UNTIL  ? parseDT(params.UNTIL)   : null;
+  const interval = params.INTERVAL ? parseInt(params.INTERVAL) : 1;
+
+  // BYDAY for weekly recurrence e.g. "MO,WE,FR"
+  const byDay = params.BYDAY ? params.BYDAY.split(",") : null;
+  const dayMap = { SU:0, MO:1, TU:2, WE:3, TH:4, FR:5, SA:6 };
+
+  const windowEnd = new Date();
+  windowEnd.setMonth(windowEnd.getMonth() + windowMonths);
+
+  const occurrences = [];
+  let current = new Date(dtstart);
+  let safety = 0;
+
+  while (occurrences.length < count && current <= windowEnd && safety++ < 500) {
+    if (!until || current <= until) {
+      if (byDay) {
+        // Emit only on matching weekdays
+        if (byDay.some(d => dayMap[d.replace(/[-\d]/g,"")] === current.getDay())) {
+          occurrences.push(new Date(current));
+        }
+      } else {
+        occurrences.push(new Date(current));
+      }
+    }
+
+    // Advance by interval
+    if (freq === "DAILY")   current.setDate(current.getDate() + interval);
+    else if (freq === "WEEKLY")  current.setDate(current.getDate() + 7 * interval);
+    else if (freq === "MONTHLY") current.setMonth(current.getMonth() + interval);
+    else if (freq === "YEARLY")  current.setFullYear(current.getFullYear() + interval);
+    else break;
+  }
+
+  return occurrences;
+}
+
 function parseICS(text) {
   const parsed = [];
   const blocks = text.split("BEGIN:VEVENT").slice(1);
@@ -450,39 +544,44 @@ function parseICS(text) {
       return match ? match[1].replace(/\\n/g, " ").replace(/\\,/g, ",").trim() : "";
     };
 
-    const dtstart = get("DTSTART");
-    const dtend   = get("DTEND");
+    const dtstartRaw = get("DTSTART");
+    const dtendRaw   = get("DTEND");
+    const rrule      = get("RRULE");
+    if (!dtstartRaw) return;
+
+    const hasTime = dtstartRaw.includes("T");
+    const dtstart = parseDT(dtstartRaw);
+    const dtend   = parseDT(dtendRaw);
     if (!dtstart) return;
 
-    const dateStr = dtstart.slice(0,4) + "-" + dtstart.slice(4,6) + "-" + dtstart.slice(6,8);
-
-    let time = "All day";
-    let duration = "";
-    if (dtstart.includes("T")) {
-      const h = parseInt(dtstart.slice(9,11));
-      const m = dtstart.slice(11,13);
-      time = (h > 12 ? h - 12 : h || 12) + ":" + m + (h >= 12 ? " PM" : " AM");
-
-      if (dtend && dtend.includes("T")) {
-        const h2 = parseInt(dtend.slice(9,11));
-        const m2 = dtend.slice(11,13);
-        const diff = (h2 * 60 + parseInt(m2)) - (h * 60 + parseInt(m));
-        if (diff > 0) {
-          const hrs = Math.floor(diff / 60);
-          const mins = diff % 60;
-          duration = hrs > 0 ? hrs + (mins > 0 ? "h " + mins + "m" : " hr") : mins + "m";
-        }
-      }
-    }
-
-    const name = get("SUMMARY") || "Untitled";
-    const desc = get("DESCRIPTION") || "";
-    const venue = get("LOCATION") || "Ventura, CA";
-    const url = get("URL") || "";
+    const name  = get("SUMMARY")     || "Untitled";
+    const desc  = get("DESCRIPTION") || "";
+    const venue = get("LOCATION")    || "Ventura, CA";
+    const url   = get("URL")         || "";
     const isFree = (name + " " + desc).toLowerCase().includes("free");
     const categories = autoTag(name, desc);
+    const duration = toDuration(dtstart, dtend);
 
-    parsed.push({ date: dateStr, time, duration, name, venue, description: desc, categories, free: isFree, url });
+    if (rrule) {
+      // Expand recurring event into individual occurrences
+      const occurrences = expandRRule(rrule, dtstart);
+      occurrences.forEach(occ => {
+        parsed.push({
+          date: toDateStr(occ),
+          time: toTimeStr(occ, hasTime),
+          duration,
+          name, venue, description: desc, categories, free: isFree, url
+        });
+      });
+    } else {
+      // Single event
+      parsed.push({
+        date: toDateStr(dtstart),
+        time: toTimeStr(dtstart, hasTime),
+        duration,
+        name, venue, description: desc, categories, free: isFree, url
+      });
+    }
   });
 
   return parsed.sort((a, b) => a.date.localeCompare(b.date));
